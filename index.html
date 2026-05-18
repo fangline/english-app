@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head>0000000
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>English Vocabulary Master</title>
@@ -9,15 +9,32 @@
 </head>
 <body>
 
-    <div class="nav-buttons">
+    <div id="nav-container" class="nav-buttons hidden">
+        <div style="width: 100%; text-align: center; margin-bottom: 10px; color: var(--text-muted);">
+            <span id="current-user-display"></span>
+            <a href="#" onclick="logout()" style="color: var(--danger); margin-left: 10px; font-size: 0.8rem;">Logout</a>
+        </div>
         <button onclick="showSection('add')">Add Word</button>
         <button onclick="showSection('practice')">Practice</button>
         <button onclick="showSection('list')">Vocabulary List</button>
     </div>
 
     <div class="container">
+        <!-- Login Section -->
+        <section id="login-section">
+            <h2>User Login</h2>
+            <p style="text-align: center; color: var(--text-muted);">輸入您的名字以進入個人資料庫</p>
+            <div class="form-group">
+                <input type="text" id="username-input" placeholder="Enter your name (e.g. David)">
+            </div>
+            <button onclick="login()">Enter Database</button>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 15px; text-align: center;">
+                * 資料將儲存在此瀏覽器的本地快取中
+            </p>
+        </section>
+
         <!-- Add Word Section -->
-        <section id="add-section">
+        <section id="add-section" class="hidden">
             <h2>Add New Word</h2>
             <!-- Accent Selector (Button Mode) -->
             <div class="accent-selector">

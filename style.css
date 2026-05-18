@@ -164,6 +164,12 @@ table { width: 100%; border-collapse: collapse; margin-top: 20px; }
 th, td { border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding: 12px; text-align: left; }
 .stat-badge { background: #e1f5fe; color: #333 !important; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; display: inline-block; }
 
+#username-input {
+    text-align: center;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
 /* --- RWD 響應式手機版編排 (直立式) --- */
 @media screen and (max-width: 600px) {
     .container {

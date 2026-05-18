@@ -1,7 +1,47 @@
-let vocabulary = JSON.parse(localStorage.getItem('myVocab')) || [];
+let currentUser = localStorage.getItem('vocab_current_user') || null;
+let vocabulary = [];
 let currentCardIndex = 0;
 let selectedAccent = 'en-GB'; // 預設為英式
 let tempAudio = { uk: '', us: '' }; // 暫存目前編輯中的音檔連結
+
+// 初始化：檢查是否已登入
+window.onload = () => {
+    if (currentUser) {
+        initUserSession();
+    } else {
+        showSection('login');
+    }
+};
+
+function login() {
+    const name = document.getElementById('username-input').value.trim();
+    if (!name) return alert("Please enter your name");
+    
+    currentUser = name;
+    localStorage.setItem('vocab_current_user', name);
+    initUserSession();
+}
+
+function logout() {
+    if (!confirm("確定要登出嗎？")) return;
+    currentUser = null;
+    localStorage.removeItem('vocab_current_user');
+    location.reload(); // 重新整理頁面回到登入狀態
+}
+
+function initUserSession() {
+    // 載入該使用者專屬的單字庫
+    vocabulary = JSON.parse(localStorage.getItem(`vocab_data_${currentUser}`)) || [];
+    
+    // 顯示 UI
+    document.getElementById('nav-container').classList.remove('hidden');
+    document.getElementById('current-user-display').innerText = `User: ${currentUser}`;
+    showSection('add');
+}
+
+function saveToLocalStorage() {
+    localStorage.setItem(`vocab_data_${currentUser}`, JSON.stringify(vocabulary));
+}
 
 function togglePhoneticPicker() {
     const picker = document.getElementById('phonetic-picker');
@@ -215,9 +255,11 @@ async function autoFill() {
 }
 
 function showSection(section) {
+    document.getElementById('login-section').classList.add('hidden');
     document.getElementById('add-section').classList.add('hidden');
     document.getElementById('practice-section').classList.add('hidden');
     document.getElementById('list-section').classList.add('hidden');
+    if (section === 'login') return document.getElementById('login-section').classList.remove('hidden');
     
     document.getElementById(`${section}-section`).classList.remove('hidden');
     
@@ -250,7 +292,7 @@ function saveWord() {
         alert("Word saved!");
     }
 
-    localStorage.setItem('myVocab', JSON.stringify(vocabulary));
+    saveToLocalStorage();
 
     ['word', 'phonetic', 'example', 'translation'].forEach(id => document.getElementById(id).value = '');
     document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
@@ -302,7 +344,7 @@ function nextWord(mastered) {
     }
     vocabulary[currentCardIndex].status = count + 1;
     
-    localStorage.setItem('myVocab', JSON.stringify(vocabulary));
+    saveToLocalStorage();
     startPractice();
 }
 
@@ -350,7 +392,7 @@ function deleteWord(id) {
     if (!confirm("Are you sure you want to delete this word?")) return;
     
     vocabulary = vocabulary.filter(v => v.id !== id);
-    localStorage.setItem('myVocab', JSON.stringify(vocabulary));
+    saveToLocalStorage();
     renderList();
 }
 
@@ -403,7 +445,7 @@ function importVocab(event) {
             if (importedVocab.length > 0) {
                 if (confirm("匯入將會覆蓋現有的單字庫，確定要繼續嗎？")) {
                     vocabulary = importedVocab;
-                    localStorage.setItem('myVocab', JSON.stringify(vocabulary));
+                    saveToLocalStorage();
                     renderList();
                     alert("匯入成功！");
                 }
