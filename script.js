@@ -73,7 +73,7 @@ function fallbackToTTS(text, pos) {
 
 let isRecognizing = false;
 
-function startSpeechLoad(fieldId, buttonId) {
+function startSpeechLoad(fieldId) {
     if (isRecognizing) return; // 防止重複觸發
 
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -82,18 +82,20 @@ function startSpeechLoad(fieldId, buttonId) {
         return;
     }
 
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+
     const recognition = new Recognition();
     recognition.lang = 'en-US';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.continuous = false; // 行動裝置上建議設為 false 以提高成功率
 
-    const voiceButton = document.getElementById(buttonId);
-    if (!voiceButton) return;
-
-    voiceButton.disabled = true;
-    voiceButton.innerText = 'Listening...';
-    voiceButton.style.color = '#ef4444'; // 錄音時按鈕變紅色
+    // 提供視覺回饋：改變輸入框邊框顏色與佔位文字
+    const originalPlaceholder = field.placeholder;
+    field.style.borderColor = '#ef4444';
+    field.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.3)';
+    if (field.tagName === 'INPUT') field.placeholder = 'Listening... (正在聽...)';
     isRecognizing = true;
 
     recognition.onresult = (event) => {
@@ -103,7 +105,7 @@ function startSpeechLoad(fieldId, buttonId) {
             return;
         }
 
-        document.getElementById(fieldId).value = transcript;
+        field.value = transcript;
         if (fieldId === 'word') {
             autoFill();
         }
@@ -119,10 +121,10 @@ function startSpeechLoad(fieldId, buttonId) {
     };
 
     recognition.onend = () => {
-        voiceButton.disabled = false;
         isRecognizing = false;
-        voiceButton.style.color = ''; // 恢復原本顏色
-        voiceButton.innerText = '🎤';
+        field.style.borderColor = '';
+        field.style.boxShadow = '';
+        if (field.tagName === 'INPUT') field.placeholder = originalPlaceholder;
     };
 
     recognition.start();
