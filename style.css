@@ -188,4 +188,12 @@ th, td { border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding: 12px; text-
     #vocab-table td:last-child {
         white-space: nowrap;
     }
+
+    /* 美化手機版導航按鈕，讓它們兩兩排列 */
+    .nav-buttons {
+        flex-wrap: wrap; /* 確保按鈕可以換行 */
+    }
+    .nav-buttons button {
+        width: calc(50% - 5px); /* 每個按鈕佔一半寬度，減去一半的 gap */
+    }
 }
