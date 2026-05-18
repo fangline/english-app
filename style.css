@@ -163,3 +163,29 @@ button:hover {
 table { width: 100%; border-collapse: collapse; margin-top: 20px; }
 th, td { border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding: 12px; text-align: left; }
 .stat-badge { background: #e1f5fe; color: #333 !important; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; display: inline-block; }
+
+/* --- RWD 響應式手機版編排 (直立式) --- */
+@media screen and (max-width: 600px) {
+    .container {
+        padding: 15px; /* 縮小容器邊距，讓內容有更多寬度 */
+    }
+
+    /* 確保 Vocabulary List 表格在框內，過寬時可左右滑動 */
+    #vocab-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* 讓 iOS 滑動更順暢 */
+        border-radius: 8px;
+    }
+
+    th, td {
+        padding: 10px 6px;
+        font-size: 0.85rem; /* 微調字體大小以適應小螢幕 */
+    }
+
+    /* 確保 Action 欄位內的按鈕不會換行，維持美觀 */
+    #vocab-table td:last-child {
+        white-space: nowrap;
+    }
+}
