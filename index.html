@@ -30,6 +30,7 @@
                 <div class="input-with-btn">
                     <input type="text" id="word" placeholder="e.g. Resilient">
                     <button type="button" class="speak-btn" onclick="speakText(document.getElementById('word').value, getSelectedPos())">🔊</button>
+                    <button type="button" id="voice-load-btn" class="speak-btn" onclick="startSpeechLoad('word', 'voice-load-btn')" title="Speak a word to load content">🎤</button>
                     <button type="button" onclick="autoFill()" id="auto-fill-btn" style="width: auto; padding: 10px; white-space: nowrap; background-color: #673ab7;">Auto Fill</button>
                 </div>
             </div>
@@ -78,6 +79,7 @@
                 <div class="input-with-btn">
                     <textarea id="example" rows="2"></textarea>
                     <button type="button" class="speak-btn" onclick="speakText(document.getElementById('example').value, getSelectedPos())">🔊</button>
+                    <button type="button" id="voice-load-example-btn" class="speak-btn" onclick="startSpeechLoad('example', 'voice-load-example-btn')" title="Speak an example sentence to load content">🎤</button>
                 </div>
             </div>
             <div class="form-group">

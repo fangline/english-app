@@ -71,6 +71,50 @@ function fallbackToTTS(text, pos) {
     window.speechSynthesis.speak(utterance);
 }
 
+function startSpeechLoad(fieldId, buttonId) {
+    if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
+        alert('您的瀏覽器不支援語音辨識，請改用 Chrome 或新版 Edge。');
+        return;
+    }
+
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new Recognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    const voiceButton = document.getElementById(buttonId);
+    if (!voiceButton) return;
+
+    voiceButton.disabled = true;
+    voiceButton.innerText = 'Listening...';
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.trim();
+        if (!transcript) {
+            alert('沒有辨識到語音，請再試一次。');
+            return;
+        }
+
+        document.getElementById(fieldId).value = transcript;
+        if (fieldId === 'word') {
+            autoFill();
+        }
+    };
+
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        alert('語音辨識失敗，請稍後再試。');
+    };
+
+    recognition.onend = () => {
+        voiceButton.disabled = false;
+        voiceButton.innerText = '🎤';
+    };
+
+    recognition.start();
+}
+
 async function autoFill() {
     const wordInput = document.getElementById('word');
     const word = wordInput.value.trim();
@@ -316,7 +360,7 @@ function importVocab(event) {
                 pos: String(row.POS || ""),
                 example: String(row.Example || ""),
                 translation: String(row.Translation || ""),
-                status: row.Status || "learning",
+                status: row.Status || "learning", 
                 audio: { uk: row.Audio_UK || "", us: row.Audio_US || "" }
             }));
 
