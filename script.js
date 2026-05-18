@@ -72,22 +72,24 @@ function fallbackToTTS(text, pos) {
 }
 
 function startSpeechLoad(fieldId, buttonId) {
-    if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
-        alert('您的瀏覽器不支援語音辨識，請改用 Chrome 或新版 Edge。');
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) {
+        alert('您的瀏覽器不支援語音辨識。蘋果手機請使用 Safari，安卓手機請使用 Chrome。');
         return;
     }
 
-    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new Recognition();
     recognition.lang = 'en-US';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+    recognition.continuous = false; // 行動裝置上建議設為 false 以提高成功率
 
     const voiceButton = document.getElementById(buttonId);
     if (!voiceButton) return;
 
     voiceButton.disabled = true;
     voiceButton.innerText = 'Listening...';
+    voiceButton.style.color = '#ef4444'; // 錄音時按鈕變紅色
 
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript.trim();
@@ -104,11 +106,16 @@ function startSpeechLoad(fieldId, buttonId) {
 
     recognition.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
-        alert('語音辨識失敗，請稍後再試。');
+        if (event.error === 'not-allowed') {
+            alert('請在瀏覽器設定中允許麥克風權限。');
+        } else {
+            alert('語音辨識失敗 (' + event.error + ')，請再試一次。');
+        }
     };
 
     recognition.onend = () => {
         voiceButton.disabled = false;
+        voiceButton.style.color = ''; // 恢復原本顏色
         voiceButton.innerText = '🎤';
     };
 
@@ -151,6 +158,25 @@ async function autoFill() {
                 // 填入音標 (處理不同可能的結構)
                 const phonetic = entry.phonetic || (entry.phonetics && entry.phonetics.find(p => p.text)?.text);
                 if (phonetic) document.getElementById('phonetic').value = phonetic;
+
+                // 自動填入例句
+                let foundExample = '';
+                if (entry.meanings && entry.meanings.length > 0) {
+                    for (const meaning of entry.meanings) {
+                        if (meaning.definitions && meaning.definitions.length > 0) {
+                            for (const definition of meaning.definitions) {
+                                if (definition.example) {
+                                    foundExample = definition.example;
+                                    break; // 找到第一個例句就停止
+                                }
+                            }
+                        }
+                        if (foundExample) break; // 找到例句就停止
+                    }
+                }
+                if (foundExample) {
+                    document.getElementById('example').value = foundExample;
+                }
 
                 // 自動判斷並選擇詞態
                 const apiPos = entry.meanings[0]?.partOfSpeech;
