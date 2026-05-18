@@ -71,7 +71,11 @@ function fallbackToTTS(text, pos) {
     window.speechSynthesis.speak(utterance);
 }
 
+let isRecognizing = false;
+
 function startSpeechLoad(fieldId, buttonId) {
+    if (isRecognizing) return; // 防止重複觸發
+
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Recognition) {
         alert('您的瀏覽器不支援語音辨識。蘋果手機請使用 Safari，安卓手機請使用 Chrome。');
@@ -90,6 +94,7 @@ function startSpeechLoad(fieldId, buttonId) {
     voiceButton.disabled = true;
     voiceButton.innerText = 'Listening...';
     voiceButton.style.color = '#ef4444'; // 錄音時按鈕變紅色
+    isRecognizing = true;
 
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript.trim();
@@ -115,6 +120,7 @@ function startSpeechLoad(fieldId, buttonId) {
 
     recognition.onend = () => {
         voiceButton.disabled = false;
+        isRecognizing = false;
         voiceButton.style.color = ''; // 恢復原本顏色
         voiceButton.innerText = '🎤';
     };
