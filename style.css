@@ -194,6 +194,6 @@ th, td { border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding: 12px; text-
         flex-wrap: wrap; /* 確保按鈕可以換行 */
     }
     .nav-buttons button {
-        width: calc(50% - 5px); /* 每個按鈕佔一半寬度，減去一半的 gap */
+        width: 100%; /* 每個按鈕佔滿一行 */
     }
 }
