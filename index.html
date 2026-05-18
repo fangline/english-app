@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Vocabulary Master</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="nav-buttons">
+        <button onclick="showSection('add')">Add Word</button>
+        <button onclick="showSection('practice')">Practice</button>
+        <button onclick="showSection('list')">Vocabulary List</button>
+    </div>
+
+    <div class="container">
+        <!-- Add Word Section -->
+        <section id="add-section">
+            <h2>Add New Word</h2>
+            <!-- Accent Selector (Button Mode) -->
+            <div class="accent-selector">
+                <label><input type="radio" name="accent" value="en-GB" checked onchange="selectedAccent = this.value"> 🇬🇧 UK</label>
+                <label><input type="radio" name="accent" value="en-US" onchange="selectedAccent = this.value"> 🇺🇸 US</label>
+            </div>
+
+            <div class="form-group">
+                <label>Word (單字)</label>
+                <div class="input-with-btn">
+                    <input type="text" id="word" placeholder="e.g. Resilient">
+                    <button type="button" class="speak-btn" onclick="speakText(document.getElementById('word').value, getSelectedPos())">🔊</button>
+                    <button type="button" onclick="autoFill()" id="auto-fill-btn" style="width: auto; padding: 10px; white-space: nowrap; background-color: #673ab7;">Auto Fill</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Phonetic (音標)</label>
+                <input type="text" id="phonetic" placeholder="e.g. /rɪˈzɪl.jənt/">
+                <button type="button" class="symbol-toggle-btn" onclick="togglePhoneticPicker()">⌨️ 插入音標符號</button>
+                <select id="phonetic-picker" class="hidden" onchange="insertPhonetic(this.value); this.selectedIndex=0; togglePhoneticPicker();" style="margin-top: 10px; width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background: #fff; color: #333; cursor: pointer;">
+                    <option value="" disabled selected>-- 選擇音標符號 --</option>
+                    <option value="i">/i/</option>
+                    <option value="ɪ">/ɪ/</option>
+                    <option value="e">/e/</option>
+                    <option value="ɛ">/ɛ/</option>
+                    <option value="æ">/æ/</option>
+                    <option value="ʌ">/ʌ/</option>
+                    <option value="ə">/ə/</option>
+                    <option value="ʊ">/ʊ/</option>
+                    <option value="u">/u/</option>
+                    <option value="ɔ">/ɔ/</option>
+                    <option value="ɑ">/ɑ/</option>
+                    <option value="aɪ">/aɪ/</option>
+                    <option value="eɪ">/eɪ/</option>
+                    <option value="oʊ">/oʊ/</option>
+                    <option value="ɔɪ">/ɔɪ/</option>
+                    <option value="aʊ">/aʊ/</option>
+                    <option value="θ">/θ/</option>
+                    <option value="ð">/ð/</option>
+                    <option value="ʃ">/ʃ/</option>
+                    <option value="ʒ">/ʒ/</option>
+                    <option value="ŋ">/ŋ/</option>
+                    <option value="ʧ">/ʧ/</option>
+                    <option value="ʤ">/ʤ/</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>POS (詞態)</label>
+                <div id="pos-group" style="display: flex; gap: 15px; flex-wrap: wrap; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; width: auto;"><input type="checkbox" name="pos" value="n." style="width: auto;"> n.</label>
+                    <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; width: auto;"><input type="checkbox" name="pos" value="v." style="width: auto;"> v.</label>
+                    <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; width: auto;"><input type="checkbox" name="pos" value="adj." style="width: auto;"> adj.</label>
+                    <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; width: auto;"><input type="checkbox" name="pos" value="adv." style="width: auto;"> adv.</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Example Sentence (例句)</label>
+                <div class="input-with-btn">
+                    <textarea id="example" rows="2"></textarea>
+                    <button type="button" class="speak-btn" onclick="speakText(document.getElementById('example').value, getSelectedPos())">🔊</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Translation (翻譯)</label>
+                <input type="text" id="translation">
+            </div>
+            <button onclick="saveWord()">Save Word</button>
+        </section>
+
+        <!-- Practice Section -->
+        <section id="practice-section" class="hidden">
+            <h2>Practice Mode</h2>
+            <div id="card-container" class="card" onclick="toggleCard()">
+                <div id="front">
+                    <h1 style="display: inline-block; margin-right: 10px;" id="card-word">Loading...</h1>
+                    <button class="speak-btn" onclick="event.stopPropagation(); speakText(document.getElementById('card-word').innerText, document.getElementById('card-pos').innerText)">🔊</button>
+                    <p class="phonetic" id="card-phonetic"></p>
+                    <p>Click to flip</p>
+                </div>
+                <div id="back" class="hidden">
+                    <p class="pos" id="card-pos"></p>
+                    <p id="card-translation"></p>
+                    <hr>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
+                        <p id="card-example" style="font-size: 0.9rem; margin: 0;"></p>
+                        <button class="speak-btn" onclick="event.stopPropagation(); speakText(document.getElementById('card-example').innerText, document.getElementById('card-pos').innerText)">🔊</button>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="nextWord(true)" style="background-color: var(--success);">Mastered</button>
+                <button onclick="nextWord(false)" style="background-color: var(--danger);">Review Later</button>
+            </div>
+        </section>
+
+        <!-- Vocabulary List Section -->
+        <section id="list-section" class="hidden">
+            <h2>Learning Results</h2>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button onclick="exportVocab()" style="background-color: #34495e;">Export (備份)</button>
+                <button onclick="document.getElementById('import-input').click()" style="background-color: #34495e;">Import (還原)</button>
+                <input type="file" id="import-input" class="hidden" accept=".xlsx, .xls" onchange="importVocab(event)">
+            </div>
+            <table id="vocab-table">
+                <thead>
+                    <tr>
+                        <th>Word</th>
+                        <th>POS</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="vocab-body"></tbody>
+            </table>
+        </section>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
