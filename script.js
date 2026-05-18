@@ -238,7 +238,7 @@ function saveWord() {
         pos: getSelectedPos(),
         example: document.getElementById('example').value,
         translation: document.getElementById('translation').value,
-        status: existingIndex >= 0 ? vocabulary[existingIndex].status : 'learning',
+        status: existingIndex >= 0 ? vocabulary[existingIndex].status : 0,
         audio: { ...tempAudio }
     };
 
@@ -295,11 +295,12 @@ function toggleCard() {
 function nextWord(mastered) {
     if (vocabulary.length === 0) return;
     
-    if (mastered) {
-        vocabulary[currentCardIndex].status = 'mastered';
-    } else {
-        vocabulary[currentCardIndex].status = 'learning';
+    // 取得目前次數，並處理從舊版字串（learning/mastered）轉換的情況
+    let count = parseInt(vocabulary[currentCardIndex].status);
+    if (isNaN(count)) {
+        count = vocabulary[currentCardIndex].status === 'mastered' ? 1 : 0;
     }
+    vocabulary[currentCardIndex].status = count + 1;
     
     localStorage.setItem('myVocab', JSON.stringify(vocabulary));
     startPractice();
@@ -312,10 +313,11 @@ function renderList() {
     vocabulary.sort((a, b) => a.word.toLowerCase().localeCompare(b.word.toLowerCase()));
 
     vocabulary.forEach(item => {
+        const displayStatus = isNaN(parseInt(item.status)) ? (item.status === 'mastered' ? 1 : 0) : item.status;
         const row = `<tr>
             <td>${item.word}</td>
             <td>${item.pos}</td>
-            <td><span class="stat-badge">${item.status}</span></td>
+            <td><span class="stat-badge">${displayStatus}</span></td>
             <td>
                 <button onclick="prepareEdit(${item.id})" style="padding: 5px 10px; width: auto; background-color: #f39c12; font-size: 0.8rem; margin-right: 5px;">Edit</button>
                 <button onclick="deleteWord(${item.id})" style="padding: 5px 10px; width: auto; background-color: #e74c3c; font-size: 0.8rem;">Delete</button>
@@ -394,7 +396,7 @@ function importVocab(event) {
                 pos: String(row.POS || ""),
                 example: String(row.Example || ""),
                 translation: String(row.Translation || ""),
-                status: row.Status || "learning", 
+                status: isNaN(parseInt(row.Status)) ? 0 : parseInt(row.Status), 
                 audio: { uk: row.Audio_UK || "", us: row.Audio_US || "" }
             }));
 
