@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>0000000
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>English Vocabulary Master</title>
@@ -15,16 +15,14 @@
             gap: 6px;
             vertical-align: middle;
         }
-        .clickable-word {
+
+        /* Style for words that have been clicked/spoken in the list */
+        .word-spoken {
+            color: #2196F3 !important; /* Material Blue */
+            font-weight: 500;
+        }
+        #vocab-body td:first-child {
             cursor: pointer;
-            transition: color 0.2s ease;
-        }
-        .clickable-word:hover {
-            text-decoration: underline;
-        }
-        .word-active {
-            color: #2196F3 !important;
-            font-weight: bold;
         }
     </style>
 </head>

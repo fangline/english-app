@@ -377,68 +377,19 @@ function testPronunciation() {
     const targetWord = vocabulary[currentCardIndex].word.toLowerCase().replace(/[^\w\s]/gi, '');
     
     const recognition = new Recognition();
-    recognition.lang = selectedAccent; // 讓辨識語系跟隨你選擇的 UK/US
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognition.continuous = false; // 行動裝置上建議設為 false 以提高成功率
+    recognition.lang = selectedAccent;
     
     // 開始測試時暫停自動跳轉計時器，避免說話到一半跳走
     clearPracticeTimer();
     
     feedbackEl.innerText = "Listening... (請發音)";
     feedbackEl.style.color = "var(--primary)";
-    feedbackEl.style.fontWeight = "bold"; // 讓提示更明顯
     isRecognizing = true;
 
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript.toLowerCase().trim().replace(/[^\w\s]/gi, '');
         
         if (transcript === targetWord) {
-            feedbackEl.innerText = "🌟 Excellent! Progress +1";
-            feedbackEl.style.color = "var(--success)";
-            
-            // 發音正確，增加該單字的熟悉度次數 (status)
-            vocabulary[currentCardIndex].status = (parseInt(vocabulary[currentCardIndex].status) || 0) + 1;
-            saveToLocalStorage();
-        } else {
-            feedbackEl.innerText = `You said: "${transcript}". Try again!`;
-            feedbackEl.style.color = "var(--danger)";
-        }
-    };
-
-    recognition.onerror = (event) => {
-        // 忽略不影響功能的錯誤訊息
-        // 'aborted': 當辨識被手動停止或重複點擊時觸發，不需視為錯誤
-        // 'no-speech': 使用者沒說話，不需彈窗
-        if (event.error === 'aborted' || event.error === 'no-speech') {
-            if (event.error === 'no-speech') {
-                feedbackEl.innerText = 'No speech detected. (未偵測到聲音)';
-            } else {
-                feedbackEl.innerText = 'Recognition aborted. (辨識已取消)';
-            }
-            feedbackEl.style.color = "var(--text-muted)";
-            return; // 不再執行後續的錯誤處理
-        }
-
-        console.error('Speech recognition error:', event.error);
-        if (event.error === 'not-allowed') {
-            alert('請在瀏覽器設定中允許麥克風權限。');
-            feedbackEl.innerText = 'Microphone permission denied. (麥克風權限被拒)';
-            feedbackEl.style.color = "var(--danger)";
-        } else {
-            feedbackEl.innerText = 'Recognition error: ' + event.error + '. Try again.';
-            feedbackEl.style.color = "var(--danger)";
-        }
-    };
-
-    recognition.onend = () => {
-        isRecognizing = false;
-        // 辨識結束後，無論成功或失敗，都重新設定 10 秒計時器，讓用戶有機會再次嘗試或等待自動跳轉
-        practiceTimer = setTimeout(() => nextWord(false), 10000);
-    };
-
-    recognition.start();
-}
             feedbackEl.innerText = "🌟 Excellent! Progress +1";
             feedbackEl.style.color = "var(--success)";
             
@@ -484,18 +435,12 @@ function nextWord(mastered) {
     startPractice();
 }
 
-function speakVocabById(id) {
+function speakVocabById(id, element) {
     const item = vocabulary.find(v => v.id === id);
-    if (item) speakText(item.word, item.pos, item.audio);
-}
-
-function handleWordClick(element, id) {
-    // 移除所有單字的選取狀態 (變回原本顏色)
-    document.querySelectorAll('.vocab-word-cell').forEach(el => el.classList.remove('word-active'));
-    // 設定當前點擊的單字為藍色 (套用 CSS 中的 .word-active)
-    element.classList.add('word-active');
-    // 執行發音
-    speakVocabById(id);
+    if (item) {
+        speakText(item.word, item.pos, item.audio);
+        if (element) element.classList.add('word-spoken');
+    }
 }
 
 function renderList() {
@@ -507,7 +452,7 @@ function renderList() {
     vocabulary.forEach(item => {
         const displayStatus = isNaN(parseInt(item.status)) ? (item.status === 'mastered' ? 1 : 0) : item.status;
         const row = `<tr>
-            <td class="vocab-word-cell clickable-word" onclick="handleWordClick(this, ${item.id})">${item.word}</td>
+            <td class="vocab-word-cell" onclick="speakVocabById(${item.id}, this)">${item.word}</td>
             <td>${item.pos}</td>
             <td><span class="stat-badge">${displayStatus}</span></td>
             <td>
