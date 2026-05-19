@@ -440,6 +440,15 @@ function speakVocabById(id) {
     if (item) speakText(item.word, item.pos, item.audio);
 }
 
+function handleWordClick(element, id) {
+    // 移除所有單字的選取狀態 (變回原本顏色)
+    document.querySelectorAll('.vocab-word-cell').forEach(el => el.classList.remove('word-active'));
+    // 設定當前點擊的單字為藍色 (套用 CSS 中的 .word-active)
+    element.classList.add('word-active');
+    // 執行發音
+    speakVocabById(id);
+}
+
 function renderList() {
     const tbody = document.getElementById('vocab-body');
     tbody.innerHTML = '';
@@ -449,7 +458,7 @@ function renderList() {
     vocabulary.forEach(item => {
         const displayStatus = isNaN(parseInt(item.status)) ? (item.status === 'mastered' ? 1 : 0) : item.status;
         const row = `<tr>
-            <td class="vocab-word-cell" onclick="speakVocabById(${item.id})">${item.word}</td>
+            <td class="vocab-word-cell clickable-word" onclick="handleWordClick(this, ${item.id})">${item.word}</td>
             <td>${item.pos}</td>
             <td><span class="stat-badge">${displayStatus}</span></td>
             <td>
