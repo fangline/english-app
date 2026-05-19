@@ -127,6 +127,7 @@ function startSpeechLoad(fieldId) {
 
     const recognition = new Recognition();
     recognition.lang = 'en-US';
+    recognition.lang = selectedAccent; // 讓辨識語系跟隨你選擇的 UK/US
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.continuous = false; // 行動裝置上建議設為 false 以提高成功率
@@ -146,17 +147,29 @@ function startSpeechLoad(fieldId) {
         }
 
         field.value = transcript;
+        field.dispatchEvent(new Event('input')); // 觸發輸入事件
         if (fieldId === 'word') {
             autoFill();
         }
     };
 
     recognition.onerror = (event) => {
+        // 忽略不影響功能的錯誤訊息
+        // 'aborted': 當辨識被手動停止或重複點擊時觸發，不需視為錯誤
+        // 'no-speech': 使用者沒說話，不需彈窗
+        if (event.error === 'aborted' || event.error === 'no-speech') {
+            if (event.error === 'no-speech') {
+                field.placeholder = 'No speech detected. (未偵測到聲音)';
+            }
+            return;
+        }
+
         console.error('Speech recognition error:', event.error);
         if (event.error === 'not-allowed') {
             alert('請在瀏覽器設定中允許麥克風權限。');
         } else {
-            alert('語音辨識失敗 (' + event.error + ')，請再試一次。');
+            // 其他嚴重錯誤（如網路問題）則顯示在 placeholder，不要彈窗干擾
+            field.placeholder = 'Recognition error: ' + event.error;
         }
     };
 
