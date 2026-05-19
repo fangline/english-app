@@ -156,6 +156,17 @@ button:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
+/* 新增的按鈕樣式，用於帶有圖示的動作按鈕 */
+.action-icon-btn { /* 覆蓋預設按鈕的 100% 寬度 */
+    width: 40px; /* 設定固定寬度 */
+    height: 40px; /* 設定固定高度 */
+    border-radius: 50%; /* 變成圓形 */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0; /* 移除內邊距，讓圖示完全置中 */
+}
+
 #card-word, #card-example, .vocab-word-cell { cursor: pointer; }
 .symbol-toggle-btn { background-color: #9b59b6; margin-top: 5px; width: auto; padding: 8px 15px; font-size: 0.9rem; }
 
@@ -174,6 +185,11 @@ th, td { border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding: 12px; text-
 @media screen and (max-width: 600px) {
     .container {
         padding: 15px; /* 縮小容器邊距，讓內容有更多寬度 */
+    }
+
+    /* 調整手機版輸入框字體大小 */
+    input, select, textarea {
+        font-size: 1.1rem; /* 增大字體，約比預設大 2-3 級 */
     }
 
     /* 確保 Vocabulary List 表格在框內，過寬時可左右滑動 */

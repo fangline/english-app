@@ -6,6 +6,16 @@
     <title>English Vocabulary Master</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* 確保線條圖示與文字垂直居中並維持現代感 */
+        .speak-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            vertical-align: middle;
+        }
+    </style>
 </head>
 <body>
 
@@ -45,9 +55,10 @@
             <div class="form-group">
                 <label>Word (單字)</label>
                 <div class="input-with-btn">
-                    <input type="text" id="word" placeholder="e.g. Resilient" onclick="startSpeechLoad('word')">
-                    <button type="button" class="speak-btn" onclick="speakText(document.getElementById('word').value, getSelectedPos())">🔊</button>
-                    <button type="button" onclick="autoFill()" id="auto-fill-btn" style="width: auto; padding: 10px; white-space: nowrap; background-color: #673ab7;">Auto Fill</button>
+                    <input type="text" id="word" placeholder="e.g. Resilient" onclick="startSpeechLoad('word')" oninput="debouncedAutoFill()">
+                    <button type="button" class="speak-btn" onclick="speakText(document.getElementById('word').value, getSelectedPos())">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                    </button>
                 </div>
             </div>
             <div class="form-group">
@@ -94,7 +105,9 @@
                 <label>Example Sentence (例句)</label>
                 <div class="input-with-btn">
                     <textarea id="example" rows="2" onclick="startSpeechLoad('example')"></textarea>
-                    <button type="button" class="speak-btn" onclick="speakText(document.getElementById('example').value, getSelectedPos())">🔊</button>
+                    <button type="button" class="speak-btn" onclick="speakText(document.getElementById('example').value, getSelectedPos())">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                    </button>
                 </div>
             </div>
             <div class="form-group">
@@ -110,8 +123,16 @@
             <div id="card-container" class="card" onclick="toggleCard()">
                 <div id="front">
                     <h1 style="display: inline-block; margin-right: 10px;" id="card-word">Loading...</h1>
-                    <button class="speak-btn" onclick="event.stopPropagation(); speakText(document.getElementById('card-word').innerText, document.getElementById('card-pos').innerText)">🔊</button>
+                    <div style="margin-bottom: 10px;">
+                        <button class="speak-btn" onclick="event.stopPropagation(); speakText(document.getElementById('card-word').innerText, document.getElementById('card-pos').innerText)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                        </button>
+                        <button class="speak-btn" style="background-color: #2196F3;" onclick="event.stopPropagation(); testPronunciation()">
+                            <svg xmlns="http://www.w3.org/2000/round" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg> Test
+                        </button>
+                    </div>
                     <p class="phonetic" id="card-phonetic"></p>
+                    <p id="practice-feedback" style="font-weight: bold; margin-top: 10px; min-height: 1.5em;"></p>
                     <p>Click to flip</p>
                 </div>
                 <div id="back" class="hidden">
@@ -120,7 +141,9 @@
                     <hr>
                     <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
                         <p id="card-example" style="font-size: 0.9rem; margin: 0;"></p>
-                        <button class="speak-btn" onclick="event.stopPropagation(); speakText(document.getElementById('card-example').innerText, document.getElementById('card-pos').innerText)">🔊</button>
+                        <button class="speak-btn" onclick="event.stopPropagation(); speakText(document.getElementById('card-example').innerText, document.getElementById('card-pos').innerText)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -132,10 +155,14 @@
 
         <!-- Vocabulary List Section -->
         <section id="list-section" class="hidden">
-            <h2>Learning Results</h2>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button onclick="exportVocab()" style="background-color: #34495e;">Export (備份)</button>
-                <button onclick="document.getElementById('import-input').click()" style="background-color: #34495e;">Import (還原)</button>
+            <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 15px; gap: 10px;">
+                <h2 style="margin: 0;">Learning Results</h2>
+                <button onclick="exportVocab()" class="action-icon-btn" style="background-color: #34495e;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                </button>
+                <button onclick="document.getElementById('import-input').click()" class="action-icon-btn" style="background-color: #34495e;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                </button>
                 <input type="file" id="import-input" class="hidden" accept=".xlsx, .xls" onchange="importVocab(event)">
             </div>
             <table id="vocab-table">

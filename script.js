@@ -2,6 +2,7 @@ let currentUser = localStorage.getItem('vocab_current_user') || null;
 let vocabulary = [];
 let currentCardIndex = 0;
 let selectedAccent = 'en-GB'; // 預設為英式
+let practiceTimer; // 用於練習模式的自動跳轉計時器
 let tempAudio = { uk: '', us: '' }; // 暫存目前編輯中的音檔連結
 
 // 初始化：檢查是否已登入
@@ -111,6 +112,18 @@ function fallbackToTTS(text, pos) {
     window.speechSynthesis.speak(utterance);
 }
 
+function clearPracticeTimer() {
+    if (practiceTimer) {
+        clearTimeout(practiceTimer);
+    }
+}
+let autoFillTimeout;
+function debouncedAutoFill() {
+    clearTimeout(autoFillTimeout);
+    autoFillTimeout = setTimeout(() => {
+        autoFill();
+    }, 700); // 延遲 700 毫秒，避免打字時頻繁觸發 API 請求
+}
 let isRecognizing = false;
 
 function startSpeechLoad(fieldId) {
@@ -184,14 +197,19 @@ function startSpeechLoad(fieldId) {
 }
 
 async function autoFill() {
+    // 清除任何待處理的防抖自動填充呼叫，以防直接觸發 autoFill
+    clearTimeout(autoFillTimeout);
+
     const wordInput = document.getElementById('word');
     const word = wordInput.value.trim();
-    const btn = document.getElementById('auto-fill-btn');
     
-    if (!word) return alert("Please enter a word first");
-
-    btn.innerText = "Loading...";
-    btn.disabled = true;
+    if (!word) {
+        // 如果單字為空，則清除 autoFill 會填充的欄位，並重置按鈕狀態
+        ['phonetic', 'example', 'translation'].forEach(id => document.getElementById(id).value = '');
+        document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
+        tempAudio = { uk: '', us: '' };
+        return;
+    }
 
     try {
         // 1. 從 Free Dictionary API 獲取音標與詞態
@@ -262,8 +280,6 @@ async function autoFill() {
     } catch (err) {
         console.error("Fetch failed:", err);
     } finally {
-        btn.innerText = "Auto Fill";
-        btn.disabled = false;
     }
 }
 
@@ -317,6 +333,7 @@ function startPractice() {
         document.getElementById('card-word').innerText = "No words added yet!";
         return;
     }
+    clearPracticeTimer(); // 開始練習前先清除任何舊的計時器
     currentCardIndex = Math.floor(Math.random() * vocabulary.length);
     displayCard();
 }
@@ -324,6 +341,9 @@ function startPractice() {
 function displayCard() {
     const item = vocabulary[currentCardIndex];
     document.getElementById('card-word').innerText = item.word;
+    // 清除舊的計時器，為新卡片設定新的計時器
+    clearPracticeTimer();
+    document.getElementById('practice-feedback').innerText = ''; // 清除上個單字的回饋
     document.getElementById('card-phonetic').innerText = item.phonetic;
     document.getElementById('card-pos').innerText = item.pos;
     document.getElementById('card-translation').innerText = item.translation;
@@ -340,13 +360,66 @@ function displayCard() {
 
     document.getElementById('front').classList.remove('hidden');
     document.getElementById('back').classList.add('hidden');
+
+    // 設定 10 秒後自動跳轉
+    practiceTimer = setTimeout(() => {
+        nextWord(false); // 自動跳轉視為「Review Later」
+    }, 10000); // 10 秒
+}
+
+function testPronunciation() {
+    if (isRecognizing) return;
+    
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) return alert('Your browser does not support speech recognition.');
+
+    const feedbackEl = document.getElementById('practice-feedback');
+    const targetWord = vocabulary[currentCardIndex].word.toLowerCase().replace(/[^\w\s]/gi, '');
+    
+    const recognition = new Recognition();
+    recognition.lang = selectedAccent;
+    
+    // 開始測試時暫停自動跳轉計時器，避免說話到一半跳走
+    clearPracticeTimer();
+    
+    feedbackEl.innerText = "Listening... (請發音)";
+    feedbackEl.style.color = "var(--primary)";
+    isRecognizing = true;
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.toLowerCase().trim().replace(/[^\w\s]/gi, '');
+        
+        if (transcript === targetWord) {
+            feedbackEl.innerText = "🌟 Excellent! Progress +1";
+            feedbackEl.style.color = "var(--success)";
+            
+            // 發音正確，增加該單字的熟悉度次數 (status)
+            vocabulary[currentCardIndex].status = (parseInt(vocabulary[currentCardIndex].status) || 0) + 1;
+            saveToLocalStorage();
+        } else {
+            feedbackEl.innerText = `You said: "${transcript}". Try again!`;
+            feedbackEl.style.color = "var(--danger)";
+        }
+    };
+
+    recognition.onerror = () => {
+        feedbackEl.innerText = "Could not hear you. Try again.";
+        feedbackEl.style.color = "var(--text-muted)";
+    };
+
+    recognition.onend = () => {
+        isRecognizing = false;
+        // 辨識結束後重新設定 10 秒計時器
+        practiceTimer = setTimeout(() => nextWord(false), 10000);
+    };
+
+    recognition.start();
 }
 
 function toggleCard() {
     document.getElementById('front').classList.toggle('hidden');
     document.getElementById('back').classList.toggle('hidden');
 }
-
 function nextWord(mastered) {
     if (vocabulary.length === 0) return;
     
@@ -356,9 +429,15 @@ function nextWord(mastered) {
         count = vocabulary[currentCardIndex].status === 'mastered' ? 1 : 0;
     }
     vocabulary[currentCardIndex].status = count + 1;
+    clearPracticeTimer(); // 使用者點擊按鈕，清除自動跳轉計時器
     
     saveToLocalStorage();
     startPractice();
+}
+
+function speakVocabById(id) {
+    const item = vocabulary.find(v => v.id === id);
+    if (item) speakText(item.word, item.pos, item.audio);
 }
 
 function renderList() {
@@ -370,12 +449,16 @@ function renderList() {
     vocabulary.forEach(item => {
         const displayStatus = isNaN(parseInt(item.status)) ? (item.status === 'mastered' ? 1 : 0) : item.status;
         const row = `<tr>
-            <td>${item.word}</td>
+            <td class="vocab-word-cell" onclick="speakVocabById(${item.id})">${item.word}</td>
             <td>${item.pos}</td>
             <td><span class="stat-badge">${displayStatus}</span></td>
             <td>
-                <button onclick="prepareEdit(${item.id})" style="padding: 5px 10px; width: auto; background-color: #f39c12; font-size: 0.8rem; margin-right: 5px;">Edit</button>
-                <button onclick="deleteWord(${item.id})" style="padding: 5px 10px; width: auto; background-color: #e74c3c; font-size: 0.8rem;">Delete</button>
+                <button onclick="prepareEdit(${item.id})" class="action-icon-btn" style="background-color: #f39c12; padding: 6px 10px; margin-right: 5px;" title="Edit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
+                <button onclick="deleteWord(${item.id})" class="action-icon-btn" style="background-color: #e74c3c; padding: 6px 10px;" title="Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                </button>
             </td>
         </tr>`;
         tbody.innerHTML += row;
