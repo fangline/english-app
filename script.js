@@ -3,6 +3,7 @@ let vocabulary = [];
 let currentCardIndex = 0;
 let selectedAccent = 'en-GB'; // 預設為英式
 let practiceTimer; // 用於練習模式的自動跳轉計時器
+let consecutiveCorrectCount = 0; // 新增：追蹤連續正確發音次數
 let tempAudio = { uk: '', us: '' }; // 暫存目前編輯中的音檔連結
 
 // 初始化：檢查是否已登入
@@ -411,6 +412,7 @@ function testPronunciation() {
             
             // 發音正確，增加該單字的熟悉度次數 (status)
             vocabulary[currentCardIndex].status = (parseInt(vocabulary[currentCardIndex].status) || 0) + 1;
+            consecutiveCorrectCount++; // 連續正確次數加一
             saveToLocalStorage();
         } else {
             feedbackEl.innerText = `You said: "${transcript}". Try again!`;
@@ -430,6 +432,7 @@ function testPronunciation() {
                 { transform: 'translateX(0)' }
             ], { duration: 250, iterations: 1 });
         }
+        checkConfettiTrigger(); // 檢查是否觸發 Confetti
     };
 
     recognition.onerror = () => {
@@ -439,11 +442,35 @@ function testPronunciation() {
 
     recognition.onend = () => {
         isRecognizing = false;
+        // 如果辨識結束時沒有正確，重置連續正確次數
+        // 注意：這裡的邏輯需要確保在 onresult 之後執行，
+        // 如果 onresult 已經處理了正確或錯誤，這裡不應再次重置。
+        // 更好的做法是將重置邏輯放在 onresult 的 else 分支中。
+        // 為了避免重複，我們將 checkConfettiTrigger 放在 onresult 之後。
+        // 如果 onresult 沒有觸發（例如辨識失敗），則在 onend 處理。
+        if (feedbackEl.innerText.includes("Could not hear you") || feedbackEl.innerText.includes("Try again!")) {
+            consecutiveCorrectCount = 0;
+        }
         // 辨識結束後重新設定 10 秒計時器
         practiceTimer = setTimeout(() => nextWord(false), 10000);
     };
 
     recognition.start();
+}
+
+/**
+ * 檢查是否達到連續正確次數，並觸發 Confetti 效果
+ */
+function checkConfettiTrigger() {
+    if (consecutiveCorrectCount >= 3) {
+        // 觸發 Confetti 效果
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+        consecutiveCorrectCount = 0; // 重置計數器
+    }
 }
 
 function toggleCard() {
