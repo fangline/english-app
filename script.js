@@ -393,21 +393,33 @@ function testPronunciation() {
 
     const recognition = new Recognition();
     recognition.lang = selectedAccent;
-    recognition.interimResults = false;
+    recognition.interimResults = true; // 啟動即時回饋，讓使用者知道系統正在聽
     recognition.continuous = false; // 強制單次辨識模式，提升手機端穩定性
+    recognition.maxAlternatives = 1;
     
     // 開始測試時暫停自動跳轉計時器，避免說話到一半跳走
     clearPracticeTimer();
     
-    feedbackEl.innerText = "Listening... (請發音)";
+    feedbackEl.innerText = "🎤 Listening...";
+    feedbackEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg> Listening...`;
     feedbackEl.style.color = "var(--primary)";
     isRecognizing = true;
 
     recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.toLowerCase().trim().replace(/[^\w\s]/gi, '');
+        const result = event.results[event.results.length - 1];
+        const transcript = result[0].transcript.toLowerCase().trim().replace(/[^\w\s]/gi, '');
+
+        // 即時回饋：如果還不是最終結果，先顯示正在辨識的內容，減少等待焦慮
+        if (!result.isFinal) {
+            feedbackEl.innerText = `👂 Hearing: "${transcript}..."`;
+            feedbackEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;"><path d="M6 8a6 6 0 1 0 12 0c0-1.5-.5-2.5-1.5-3.5S14 3 12 3"></path><path d="M16 8.5c0 .5-.5 1-1.5 1s-1.5-.5-1.5-1 1.5-2 3-2"></path><path d="M15.58 16.5a4 4 0 1 0-7.16 0"></path></svg> Hearing: "${transcript}..."`;
+            feedbackEl.style.color = "var(--text-muted)";
+            return;
+        }
         
         if (transcript === targetWord) {
             feedbackEl.innerText = "🌟 Excellent! Progress +1";
+            feedbackEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Excellent! Progress +1`;
             feedbackEl.style.color = "var(--success)";
 
             // 播放成功音效
@@ -429,6 +441,7 @@ function testPronunciation() {
             saveToLocalStorage();
         } else {
             feedbackEl.innerText = `You said: "${transcript}". Try again!`;
+            feedbackEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> You said: "${transcript}". Try again!`;
             feedbackEl.style.color = "var(--danger)";
 
             // 播放失敗音效
@@ -444,26 +457,24 @@ function testPronunciation() {
                 { transform: 'translateX(8px)' },
                 { transform: 'translateX(0)' }
             ], { duration: 250, iterations: 1 });
+            consecutiveCorrectCount = 0; // 答錯或辨識不符，重置連續正確次數
         }
         checkConfettiTrigger(); // 檢查是否觸發 Confetti
     };
 
-    recognition.onerror = () => {
-        feedbackEl.innerText = "Could not hear you. Try again.";
+    recognition.onerror = (event) => {
+        console.error("Speech Recognition Error:", event.error);
+        feedbackEl.innerText = event.error === 'no-speech' ? "🔇 No sound detected. Try again." : "⚠️ Error: " + event.error;
+        const errorIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>`;
+        const micOffIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>`;
+        
+        feedbackEl.innerHTML = event.error === 'no-speech' ? `${micOffIcon} No sound detected. Try again.` : `${errorIcon} Error: ${event.error}`;
         feedbackEl.style.color = "var(--text-muted)";
+        consecutiveCorrectCount = 0; // 出錯時也重置次數
     };
 
     recognition.onend = () => {
         isRecognizing = false;
-        // 如果辨識結束時沒有正確，重置連續正確次數
-        // 注意：這裡的邏輯需要確保在 onresult 之後執行，
-        // 如果 onresult 已經處理了正確或錯誤，這裡不應再次重置。
-        // 更好的做法是將重置邏輯放在 onresult 的 else 分支中。
-        // 為了避免重複，我們將 checkConfettiTrigger 放在 onresult 之後。
-        // 如果 onresult 沒有觸發（例如辨識失敗），則在 onend 處理。
-        if (feedbackEl.innerText.includes("Could not hear you") || feedbackEl.innerText.includes("Try again!")) {
-            consecutiveCorrectCount = 0;
-        }
         // 辨識結束後重新設定 10 秒計時器
         practiceTimer = setTimeout(() => nextWord(false), 10000);
     };
