@@ -109,11 +109,11 @@
             </div>
             <div class="form-group">
                 <label>POS (詞態)</label>
-                <div id="pos-group" style="display: flex; gap: 15px; flex-wrap: wrap; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                    <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; width: auto;"><input type="checkbox" name="pos" value="n." style="width: auto;"> n.</label>
-                    <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; width: auto;"><input type="checkbox" name="pos" value="v." style="width: auto;"> v.</label>
-                    <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; width: auto;"><input type="checkbox" name="pos" value="adj." style="width: auto;"> adj.</label>
-                    <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; width: auto;"><input type="checkbox" name="pos" value="adv." style="width: auto;"> adv.</label>
+                <div id="pos-group" style="display: flex; gap: 8px; flex-wrap: nowrap; padding: 8px; border: 1px solid #ddd; border-radius: 6px; overflow-x: auto; font-size: 0.85rem;">
+                    <label style="display: inline-flex; align-items: center; gap: 3px; font-weight: normal; margin-bottom: 0; width: auto; white-space: nowrap;"><input type="checkbox" name="pos" value="n." style="width: auto;"> n.</label>
+                    <label style="display: inline-flex; align-items: center; gap: 3px; font-weight: normal; margin-bottom: 0; width: auto; white-space: nowrap;"><input type="checkbox" name="pos" value="v." style="width: auto;"> v.</label>
+                    <label style="display: inline-flex; align-items: center; gap: 3px; font-weight: normal; margin-bottom: 0; width: auto; white-space: nowrap;"><input type="checkbox" name="pos" value="adj." style="width: auto;"> adj.</label>
+                    <label style="display: inline-flex; align-items: center; gap: 3px; font-weight: normal; margin-bottom: 0; width: auto; white-space: nowrap;"><input type="checkbox" name="pos" value="adv." style="width: auto;"> adv.</label>
                 </div>
             </div>
             <div class="form-group">
@@ -126,7 +126,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <label>Translation (翻譯)</label>
+                <label>Trans. (翻譯)</label>
                 <input type="text" id="translation">
             </div>
             <button onclick="saveWord()">Save Word</button>
@@ -185,7 +185,7 @@
                     <tr>
                         <th>Word</th>
                         <th>POS</th>
-                        <th>Translation</th>
+                        <th>Trans.</th>
                         <th>Action</th>
                     </tr>
                 </thead>
