@@ -376,6 +376,9 @@ function testPronunciation() {
     const feedbackEl = document.getElementById('practice-feedback');
     const targetWord = vocabulary[currentCardIndex].word.toLowerCase().replace(/[^\w\s]/gi, '');
     
+    const successSound = document.getElementById('sound-success');
+    const errorSound = document.getElementById('sound-error');
+
     const recognition = new Recognition();
     recognition.lang = selectedAccent;
     
@@ -392,6 +395,19 @@ function testPronunciation() {
         if (transcript === targetWord) {
             feedbackEl.innerText = "🌟 Excellent! Progress +1";
             feedbackEl.style.color = "var(--success)";
+
+            // 播放成功音效
+            if (successSound) {
+                successSound.currentTime = 0;
+                successSound.play().catch(e => console.warn("Success sound play failed", e));
+            }
+
+            // 成功動畫：縮放脈衝效果 (Pulse effect)
+            feedbackEl.animate([
+                { transform: 'scale(1)' },
+                { transform: 'scale(1.25)', offset: 0.5 },
+                { transform: 'scale(1)' }
+            ], { duration: 400, easing: 'ease-out' });
             
             // 發音正確，增加該單字的熟悉度次數 (status)
             vocabulary[currentCardIndex].status = (parseInt(vocabulary[currentCardIndex].status) || 0) + 1;
@@ -399,6 +415,20 @@ function testPronunciation() {
         } else {
             feedbackEl.innerText = `You said: "${transcript}". Try again!`;
             feedbackEl.style.color = "var(--danger)";
+
+            // 播放失敗音效
+            if (errorSound) {
+                errorSound.currentTime = 0;
+                errorSound.play().catch(e => console.warn("Error sound play failed", e));
+            }
+
+            // 失敗動畫：水平晃動效果 (Shake effect)
+            feedbackEl.animate([
+                { transform: 'translateX(0)' },
+                { transform: 'translateX(-8px)' },
+                { transform: 'translateX(8px)' },
+                { transform: 'translateX(0)' }
+            ], { duration: 250, iterations: 1 });
         }
     };
 
