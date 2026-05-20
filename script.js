@@ -93,6 +93,9 @@ function speakText(text, pos, audioUrls = null) {
 }
 
 function fallbackToTTS(text, pos) {
+    // 確保暫停所有排隊中的語音，解決 iOS 系統下 TTS 有時會無聲的問題
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = selectedAccent; // 根據選擇切換腔調
 
@@ -374,14 +377,24 @@ function testPronunciation() {
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Recognition) return alert('Your browser does not support speech recognition.');
 
+    // 停止任何正在播放的合成語音，避免錄音時發生硬體佔用衝突
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+
     const feedbackEl = document.getElementById('practice-feedback');
     const targetWord = vocabulary[currentCardIndex].word.toLowerCase().replace(/[^\w\s]/gi, '');
     
     const successSound = document.getElementById('sound-success');
     const errorSound = document.getElementById('sound-error');
 
+    // iOS 關鍵優化：在使用者點擊手勢的當下先「解鎖」音效資源
+    // 這樣在辨識完成的非同步 Callback 中，successSound.play() 才能順利執行
+    if (successSound) { successSound.play().then(() => { successSound.pause(); successSound.currentTime = 0; }).catch(() => {}); }
+    if (errorSound) { errorSound.play().then(() => { errorSound.pause(); errorSound.currentTime = 0; }).catch(() => {}); }
+
     const recognition = new Recognition();
     recognition.lang = selectedAccent;
+    recognition.interimResults = false;
+    recognition.continuous = false; // 強制單次辨識模式，提升手機端穩定性
     
     // 開始測試時暫停自動跳轉計時器，避免說話到一半跳走
     clearPracticeTimer();
