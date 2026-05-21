@@ -588,6 +588,17 @@ function deleteWordFromEditPage() {
     }
 }
 
+function clearAddForm() {
+    // 清空所有輸入欄位
+    ['word', 'phonetic', 'example', 'example-translation', 'translation'].forEach(id => document.getElementById(id).value = '');
+    // 取消所有詞態勾選
+    document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
+    // 重置暫存音檔
+    tempAudio = { uk: '', us: '' };
+    // 重置編輯狀態並隱藏刪除按鈕
+    editingWordId = null;
+    document.getElementById('delete-word-btn').classList.add('hidden');
+}
 function prepareEdit(id) {
     const item = vocabulary.find(v => v.id === id);
     if (!item) return;
