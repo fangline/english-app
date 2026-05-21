@@ -230,7 +230,7 @@ async function autoFill() {
     
     if (!word) {
         // 如果單字為空，則清除 autoFill 會填充的欄位，並重置按鈕狀態
-        ['phonetic', 'example', 'translation'].forEach(id => document.getElementById(id).value = '');
+        ['phonetic', 'example', 'example-translation', 'translation'].forEach(id => document.getElementById(id).value = '');
         document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
         tempAudio = { uk: '', us: '' };
         return;
@@ -280,6 +280,16 @@ async function autoFill() {
                 }
                 if (foundExample) {
                     document.getElementById('example').value = foundExample;
+                    // 額外嘗試翻譯例句
+                    try {
+                        const exTransRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(foundExample)}&langpair=en|zh-TW`);
+                        if (exTransRes.ok) {
+                            const exTransData = await exTransRes.json();
+                            if (exTransData.responseData && exTransData.responseData.translatedText) {
+                                document.getElementById('example-translation').value = exTransData.responseData.translatedText.replace(/<\/?[^>]+(>|$)/g, "");
+                            }
+                        }
+                    } catch (e) { console.warn("Example translation failed", e); }
                 }
 
                 // 自動判斷並選擇詞態
@@ -333,6 +343,7 @@ function saveWord() {
         phonetic: document.getElementById('phonetic').value,
         pos: getSelectedPos(),
         example: document.getElementById('example').value,
+        exampleTranslation: document.getElementById('example-translation').value,
         translation: document.getElementById('translation').value,
         status: existingIndex >= 0 ? vocabulary[existingIndex].status : 0,
         audio: { ...tempAudio }
@@ -348,7 +359,7 @@ function saveWord() {
 
     saveToLocalStorage();
 
-    ['word', 'phonetic', 'example', 'translation'].forEach(id => document.getElementById(id).value = '');
+    ['word', 'phonetic', 'example', 'example-translation', 'translation'].forEach(id => document.getElementById(id).value = '');
     document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
     tempAudio = { uk: '', us: '' };
 }
@@ -373,6 +384,7 @@ function displayCard() {
     document.getElementById('card-pos').innerText = item.pos;
     document.getElementById('card-translation').innerText = item.translation;
     document.getElementById('card-example').innerText = item.example;
+    document.getElementById('card-example-translation').innerText = item.exampleTranslation || '';
     
     const wordBtn = document.querySelector('#front .speak-btn');
     const exBtn = document.querySelector('#back .speak-btn');
@@ -566,7 +578,7 @@ function deleteWordFromEditPage() {
         deleteWord(editingWordId); // 呼叫現有的刪除邏輯
         
         // 刪除後，重置表單和編輯狀態
-        ['word', 'phonetic', 'example', 'translation'].forEach(id => document.getElementById(id).value = '');
+        ['word', 'phonetic', 'example', 'example-translation', 'translation'].forEach(id => document.getElementById(id).value = '');
         document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
         tempAudio = { uk: '', us: '' };
         editingWordId = null;
@@ -591,6 +603,7 @@ function prepareEdit(id) {
     });
 
     document.getElementById('example').value = item.example;
+    document.getElementById('example-translation').value = item.exampleTranslation || '';
     document.getElementById('translation').value = item.translation;
     if (item.audio) tempAudio = { ...item.audio };
 
@@ -612,6 +625,7 @@ function exportVocab() {
         Phonetic: item.phonetic,
         POS: item.pos,
         Example: item.example,
+        Example_Translation: item.exampleTranslation || '',
         Translation: item.translation,
         Status: item.status,
         Audio_UK: item.audio ? item.audio.uk : '',
@@ -645,6 +659,7 @@ function importVocab(event) {
                 phonetic: String(row.Phonetic || ""),
                 pos: String(row.POS || ""),
                 example: String(row.Example || ""),
+                exampleTranslation: String(row.Example_Translation || ""),
                 translation: String(row.Translation || ""),
                 status: isNaN(parseInt(row.Status)) ? 0 : parseInt(row.Status), 
                 audio: { uk: row.Audio_UK || "", us: row.Audio_US || "" }
