@@ -54,7 +54,13 @@
 
         <!-- Add Word Section -->
         <section id="add-section" class="hidden">
-            <h2>Add New Word</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Add New Word</h2>
+                <button id="delete-word-btn" class="action-icon-btn hidden" style="background-color: #e74c3c;" onclick="deleteWordFromEditPage()" title="Delete Word">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                </button>
+            </div>
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">(可直接打字輸入，或點擊綠色按鈕進行語音辨識)</p>
             <!-- Accent Selector (Button Mode) -->
             <div class="accent-selector">
                 <label><input type="radio" name="accent" value="en-GB" checked onchange="selectedAccent = this.value"> 🇬🇧 UK</label>
@@ -64,11 +70,15 @@
             <div class="form-group">
                 <label>Word (單字)</label>
                 <div class="input-with-btn">
-                    <input type="text" id="word" placeholder="e.g. Resilient" onclick="startSpeechLoad('word')" oninput="debouncedAutoFill()">
-                    <button type="button" class="speak-btn" onclick="speakText(document.getElementById('word').value, getSelectedPos())">
+                    <input type="text" id="word" placeholder="請輸入單字 (例如: Resilient)" oninput="debouncedAutoFill()">
+                    <button type="button" class="speak-btn" style="background-color: #4CAF50;" onclick="startSpeechLoad('word')" title="語音輸入">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                    </button>
+                    <button type="button" class="speak-btn" onclick="speakText(document.getElementById('word').value, getSelectedPos())" title="播放發音">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
                     </button>
                 </div>
+                <span id="auto-fill-status" style="font-size: 0.75rem; color: #e74c3c; margin-top: 4px; display: block;"></span>
             </div>
             <div class="form-group">
                 <label>Phonetic (音標)</label>
@@ -109,18 +119,21 @@
             </div>
             <div class="form-group">
                 <label>POS (詞態)</label>
-                <div id="pos-group" style="display: flex; gap: 8px; flex-wrap: nowrap; padding: 8px; border: 1px solid #ddd; border-radius: 6px; overflow-x: auto; font-size: 0.85rem;">
-                    <label style="display: inline-flex; align-items: center; gap: 3px; font-weight: normal; margin-bottom: 0; width: auto; white-space: nowrap;"><input type="checkbox" name="pos" value="n." style="width: auto;"> n.</label>
-                    <label style="display: inline-flex; align-items: center; gap: 3px; font-weight: normal; margin-bottom: 0; width: auto; white-space: nowrap;"><input type="checkbox" name="pos" value="v." style="width: auto;"> v.</label>
-                    <label style="display: inline-flex; align-items: center; gap: 3px; font-weight: normal; margin-bottom: 0; width: auto; white-space: nowrap;"><input type="checkbox" name="pos" value="adj." style="width: auto;"> adj.</label>
-                    <label style="display: inline-flex; align-items: center; gap: 3px; font-weight: normal; margin-bottom: 0; width: auto; white-space: nowrap;"><input type="checkbox" name="pos" value="adv." style="width: auto;"> adv.</label>
+                <div id="pos-group" style="display: flex; gap: 15px; flex-wrap: wrap; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; width: auto;"><input type="checkbox" name="pos" value="n." style="width: auto;"> n.</label>
+                    <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; width: auto;"><input type="checkbox" name="pos" value="v." style="width: auto;"> v.</label>
+                    <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; width: auto;"><input type="checkbox" name="pos" value="adj." style="width: auto;"> adj.</label>
+                    <label style="display: inline-flex; align-items: center; gap: 5px; font-weight: normal; margin-bottom: 0; width: auto;"><input type="checkbox" name="pos" value="adv." style="width: auto;"> adv.</label>
                 </div>
             </div>
             <div class="form-group">
                 <label>Example Sentence (例句)</label>
                 <div class="input-with-btn">
-                    <textarea id="example" rows="2" onclick="startSpeechLoad('example')"></textarea>
-                    <button type="button" class="speak-btn" onclick="speakText(document.getElementById('example').value, getSelectedPos())">
+                    <textarea id="example" rows="2" placeholder="輸入例句或使用語音輸入..."></textarea>
+                    <button type="button" class="speak-btn" style="background-color: #4CAF50;" onclick="startSpeechLoad('example')" title="語音輸入">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                    </button>
+                    <button type="button" class="speak-btn" onclick="speakText(document.getElementById('example').value, getSelectedPos())" title="播放發音">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
                     </button>
                 </div>
@@ -135,6 +148,7 @@
         <!-- Practice Section -->
         <section id="practice-section" class="hidden">
             <h2>Practice Mode</h2>
+
             <div id="card-container" class="card" onclick="toggleCard()">
                 <div id="front">
                     <h1 style="display: inline-block; margin-right: 10px;" id="card-word">Loading...</h1>
@@ -186,7 +200,7 @@
                         <th>Word</th>
                         <th>POS</th>
                         <th>Trans.</th>
-                        <th>Action</th>
+                        <th style="text-align: center;">Action</th>
                     </tr>
                 </thead>
                 <tbody id="vocab-body"></tbody>

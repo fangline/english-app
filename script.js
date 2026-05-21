@@ -2,9 +2,12 @@ let currentUser = localStorage.getItem('vocab_current_user') || null;
 let vocabulary = [];
 let currentCardIndex = 0;
 let selectedAccent = 'en-GB'; // 預設為英式
+let editingWordId = null; // 新增：追蹤目前正在編輯的單字 ID
 let practiceTimer; // 用於練習模式的自動跳轉計時器
 let consecutiveCorrectCount = 0; // 新增：追蹤連續正確發音次數
 let tempAudio = { uk: '', us: '' }; // 暫存目前編輯中的音檔連結
+let synthUtterance; // 全域變數，防止 TTS 物件被垃圾回收
+const globalAudioPlayer = new Audio(); // 全域單一播放器，提高行動端穩定性
 
 // 初始化：檢查是否已登入
 window.onload = () => {
@@ -72,32 +75,40 @@ function insertPhonetic(symbol) {
 function speakText(text, pos, audioUrls = null) {
     if (!text) return;
 
+    // 停止所有正在進行的聲音
+    clearPracticeTimer(); // 播放語音時先暫停自動跳轉計時
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    globalAudioPlayer.pause();
+    globalAudioPlayer.currentTime = 0;
+
     // 優先嘗試播放真人錄製音檔
     let targetAudioUrl = '';
-    if (audioUrls) {
+    if (audioUrls && (audioUrls.uk || audioUrls.us)) {
         targetAudioUrl = (selectedAccent === 'en-GB' ? audioUrls.uk : audioUrls.us);
     } else if (text === document.getElementById('word').value.trim()) {
         // 僅在 "Add Word" 頁面預覽單字時使用暫存音檔
         targetAudioUrl = (selectedAccent === 'en-GB' ? tempAudio.uk : tempAudio.us);
     }
 
-    if (targetAudioUrl) {
-        const audio = new Audio(targetAudioUrl);
-        audio.play().catch(e => {
+    if (targetAudioUrl && targetAudioUrl.trim() !== "") {
+        globalAudioPlayer.src = targetAudioUrl;
+        globalAudioPlayer.onended = startPracticeTimer; // 音檔播完後重設 10 秒計時
+        globalAudioPlayer.play().catch(e => {
             console.warn("Audio file play failed, falling back to TTS", e);
             fallbackToTTS(text, pos);
         });
     } else {
+        // 如果沒有音檔連結，直接進入 TTS
         fallbackToTTS(text, pos);
     }
 }
 
 function fallbackToTTS(text, pos) {
-    // 確保暫停所有排隊中的語音，解決 iOS 系統下 TTS 有時會無聲的問題
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = selectedAccent; // 根據選擇切換腔調
+    if (!window.speechSynthesis) return;
+    
+    // 將物件賦值給全域變數 synthUtterance 以防止被 GC
+    synthUtterance = new SpeechSynthesisUtterance(text);
+    synthUtterance.lang = selectedAccent; 
 
     // 偵測是否為疑問句 (以問號結尾)
     const isQuestion = text.trim().endsWith('?');
@@ -106,19 +117,29 @@ function fallbackToTTS(text, pos) {
     const hasEmphasis = pos && (pos.includes('v.') || pos.includes('adj.'));
 
     if (isQuestion) {
-        utterance.pitch = 1.5; // 疑問句使用明顯的上升音調
+        synthUtterance.pitch = 1.5; 
     } else if (hasEmphasis) {
-        utterance.pitch = 1.3; // 動詞與形容詞使用稍高的強調音調
+        synthUtterance.pitch = 1.3; 
     } else {
-        utterance.pitch = 1.0; // 一般情況使用正常音調
+        synthUtterance.pitch = 1.0; 
     }
 
-    window.speechSynthesis.speak(utterance);
+    synthUtterance.onend = startPracticeTimer; // TTS 語音結束後重設 10 秒計時
+    window.speechSynthesis.speak(synthUtterance);
 }
 
 function clearPracticeTimer() {
     if (practiceTimer) {
         clearTimeout(practiceTimer);
+    }
+}
+
+function startPracticeTimer() {
+    clearPracticeTimer();
+    const practiceSection = document.getElementById('practice-section');
+
+    if (practiceSection && !practiceSection.classList.contains('hidden')) {
+        practiceTimer = setTimeout(() => nextWord(false), 10000);
     }
 }
 let autoFillTimeout;
@@ -365,10 +386,7 @@ function displayCard() {
     document.getElementById('front').classList.remove('hidden');
     document.getElementById('back').classList.add('hidden');
 
-    // 設定 10 秒後自動跳轉
-    practiceTimer = setTimeout(() => {
-        nextWord(false); // 自動跳轉視為「Review Later」
-    }, 10000); // 10 秒
+    startPracticeTimer();
 }
 
 function testPronunciation() {
@@ -379,6 +397,8 @@ function testPronunciation() {
 
     // 停止任何正在播放的合成語音，避免錄音時發生硬體佔用衝突
     if (window.speechSynthesis) window.speechSynthesis.cancel();
+    globalAudioPlayer.pause();
+    globalAudioPlayer.currentTime = 0;
 
     const feedbackEl = document.getElementById('practice-feedback');
     const targetWord = vocabulary[currentCardIndex].word.toLowerCase().replace(/[^\w\s]/gi, '');
@@ -470,8 +490,7 @@ function testPronunciation() {
 
     recognition.onend = () => {
         isRecognizing = false;
-        // 辨識結束後重新設定 10 秒計時器
-        practiceTimer = setTimeout(() => nextWord(false), 10000);
+        startPracticeTimer();
     };
 
     recognition.start();
@@ -530,12 +549,9 @@ function renderList() {
             <td class="vocab-word-cell" onclick="speakVocabById(${item.id}, this)">${item.word}</td>
             <td>${item.pos}</td>
             <td>${item.translation}</td>
-            <td>
-                <button onclick="prepareEdit(${item.id})" class="action-icon-btn" style="background-color: #f39c12; padding: 6px 10px; margin-right: 5px;" title="Edit">
+            <td style="text-align: center;">
+                <button onclick="prepareEdit(${item.id})" class="action-icon-btn" style="background-color: #f39c12; padding: 6px 10px;" title="Edit">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                </button>
-                <button onclick="deleteWord(${item.id})" class="action-icon-btn" style="background-color: #e74c3c; padding: 6px 10px;" title="Delete">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                 </button>
             </td>
         </tr>`;
@@ -543,9 +559,28 @@ function renderList() {
     });
 }
 
+function deleteWordFromEditPage() {
+    if (editingWordId) {
+        if (!confirm("Are you sure you want to delete this word?")) return;
+
+        deleteWord(editingWordId); // 呼叫現有的刪除邏輯
+        
+        // 刪除後，重置表單和編輯狀態
+        ['word', 'phonetic', 'example', 'translation'].forEach(id => document.getElementById(id).value = '');
+        document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
+        tempAudio = { uk: '', us: '' };
+        editingWordId = null;
+        document.getElementById('delete-word-btn').classList.add('hidden');
+        alert("Word deleted!");
+        showSection('list'); // 導航回單字列表
+    }
+}
+
 function prepareEdit(id) {
     const item = vocabulary.find(v => v.id === id);
     if (!item) return;
+
+    editingWordId = id; // 設定目前正在編輯的單字 ID
 
     document.getElementById('word').value = item.word;
     document.getElementById('phonetic').value = item.phonetic;
@@ -559,15 +594,14 @@ function prepareEdit(id) {
     document.getElementById('translation').value = item.translation;
     if (item.audio) tempAudio = { ...item.audio };
 
+    // 顯示刪除按鈕
+    document.getElementById('delete-word-btn').classList.remove('hidden');
     showSection('add');
 }
 
 function deleteWord(id) {
-    if (!confirm("Are you sure you want to delete this word?")) return;
-    
     vocabulary = vocabulary.filter(v => v.id !== id);
     saveToLocalStorage();
-    renderList();
 }
 
 function exportVocab() {
