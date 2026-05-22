@@ -150,9 +150,15 @@ function debouncedAutoFill() {
     }, 700); // 延遲 700 毫秒，避免打字時頻繁觸發 API 請求
 }
 let isRecognizing = false;
+let activeRecognition = null; // 追蹤目前的辨識實體
 
 function startSpeechLoad(fieldId) {
-    if (isRecognizing) return; // 防止重複觸發
+    // iOS 穩定性優化：如果已有正在執行的辨識，先強行停止並釋放
+    if (activeRecognition) {
+        try { activeRecognition.abort(); } catch(e) {}
+        activeRecognition = null;
+        isRecognizing = false;
+    }
 
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Recognition) {
@@ -164,7 +170,7 @@ function startSpeechLoad(fieldId) {
     if (!field) return;
 
     const recognition = new Recognition();
-    recognition.lang = 'en-US';
+    activeRecognition = recognition;
     recognition.lang = selectedAccent; // 讓辨識語系跟隨你選擇的 UK/US
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
@@ -213,12 +219,19 @@ function startSpeechLoad(fieldId) {
 
     recognition.onend = () => {
         isRecognizing = false;
+        activeRecognition = null;
         field.style.borderColor = '';
         field.style.boxShadow = '';
         if (field.tagName === 'INPUT') field.placeholder = originalPlaceholder;
     };
 
-    recognition.start();
+    try {
+        recognition.start();
+    } catch (e) {
+        console.error("Recognition start failed:", e);
+        isRecognizing = false;
+        activeRecognition = null;
+    }
 }
 
 async function autoFill() {
@@ -399,7 +412,12 @@ function displayCard() {
 }
 
 function testPronunciation() {
-    if (isRecognizing) return;
+    // iOS 穩定性優化：如果點擊時正在辨識，先中止舊的，允許使用者重新開始
+    if (activeRecognition) {
+        try { activeRecognition.abort(); } catch(e) {}
+        activeRecognition = null;
+        isRecognizing = false;
+    }
     
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Recognition) return alert('Your browser does not support speech recognition.');
@@ -421,6 +439,7 @@ function testPronunciation() {
     if (errorSound) { errorSound.play().then(() => { errorSound.pause(); errorSound.currentTime = 0; }).catch(() => {}); }
 
     const recognition = new Recognition();
+    activeRecognition = recognition;
     recognition.lang = selectedAccent;
     recognition.interimResults = true; // 啟動即時回饋，讓使用者知道系統正在聽
     recognition.continuous = false; // 強制單次辨識模式，提升手機端穩定性
