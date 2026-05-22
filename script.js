@@ -412,6 +412,12 @@ function displayCard() {
 }
 
 function testPronunciation() {
+    // iOS 補丁：確保 AudioContext 在使用者點擊時被啟用
+    if (window.AudioContext || window.webkitAudioContext) {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+    }
+
     // iOS 穩定性優化：如果點擊時正在辨識，先中止舊的，允許使用者重新開始
     if (activeRecognition) {
         try { activeRecognition.abort(); } catch(e) {}
@@ -422,7 +428,7 @@ function testPronunciation() {
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Recognition) return alert('Your browser does not support speech recognition.');
 
-    // 停止任何正在播放的合成語音，避免錄音時發生硬體佔用衝突
+    // 停止任何正在播放的聲音，iOS 同時只能處理一個音訊流
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     globalAudioPlayer.pause();
     globalAudioPlayer.currentTime = 0;
@@ -441,8 +447,9 @@ function testPronunciation() {
     const recognition = new Recognition();
     activeRecognition = recognition;
     recognition.lang = selectedAccent;
-    recognition.interimResults = true; // 啟動即時回饋，讓使用者知道系統正在聽
-    recognition.continuous = false; // 強制單次辨識模式，提升手機端穩定性
+    // 在某些 iOS 版本上，關閉 interimResults 能顯著提升穩定性，避免處理中斷
+    recognition.interimResults = false; 
+    recognition.continuous = false; 
     recognition.maxAlternatives = 1;
     
     // 開始測試時暫停自動跳轉計時器，避免說話到一半跳走
