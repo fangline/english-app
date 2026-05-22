@@ -24,52 +24,6 @@ body {
     min-height: 100vh;
 }
 
-/* Add Word 頁面單字輸入列優化 */
-.word-input-layout {
-    display: flex;
-    gap: 8px;
-    align-items: stretch;
-}
-
-#word {
-    flex: 1;
-    height: 90px; /* 增加高度以容納右側三排按鈕 */
-    min-width: 0;
-}
-
-.word-side-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 110px;
-}
-
-.mini-accent-selector {
-    display: flex;
-    background: rgba(15, 23, 42, 0.5);
-    border-radius: 4px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.mini-accent-selector label {
-    flex: 1; margin: 0 !important; padding: 4px; font-size: 10px; cursor: pointer; text-align: center;
-}
-.mini-accent-selector input { display: none; }
-.mini-accent-selector label:has(input:checked) { background: var(--primary-color); color: white; }
-
-.action-btn-row, .audio-btn-row {
-    display: flex;
-    gap: 4px;
-}
-
-.rect-mini-btn {
-    flex: 1; height: 28px; font-size: 11px; border-radius: 4px; border: none; color: white; cursor: pointer; font-weight: bold;
-}
-
-.icon-mini-btn {
-    flex: 1; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer;
-}
-
 .container {
     max-width: 800px;
     width: 100%;
