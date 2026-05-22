@@ -24,6 +24,85 @@ body {
     min-height: 100vh;
 }
 
+/* Add Word 頁面單字輸入列優化 */
+.word-input-layout {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start; /* 改為對齊頂部，避免按鈕被拉得太長 */
+    flex-wrap: nowrap; /* 強制不換行，確保按鈕在右邊 */
+}
+
+#word {
+    flex: 1;
+    height: 100px; /* 稍微加大單字框高度 */
+    min-width: 0; /* 防止 flex 項目溢出容器 */
+    font-size: 1.2rem;
+}
+
+.word-side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 120px; /* 固定寬度，避免在不同手機尺寸下變形 */
+    flex-shrink: 0; /* 防止面板被壓縮 */
+}
+
+.mini-accent-selector {
+    display: flex;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    justify-content: flex-end; /* 讓 UK/US 按鈕靠右對齊 */
+}
+.mini-accent-selector label {
+    /* 移除 flex: 1，設定固定寬度 */
+    width: 58px; 
+    margin: 0 !important; 
+    padding: 4px; 
+    font-size: 10px; 
+    cursor: pointer; 
+    text-align: center;
+}
+.mini-accent-selector input { display: none; }
+.mini-accent-selector label:has(input:checked) { background: var(--primary-color); color: white; }
+
+.action-btn-row, .audio-btn-row {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end; /* 讓按鈕靠右對齊 */
+}
+
+.rect-mini-btn {
+    flex: 1; /* 自動延伸以填滿寬度，若有兩個則平分 */
+    height: 28px; 
+    font-size: 11px; 
+    border-radius: 4px; 
+    border: none; 
+    color: white; 
+    cursor: pointer; 
+    font-weight: bold;
+}
+
+.icon-mini-btn {
+    /* 移除 flex: 1，設定固定寬度 */
+    width: 58px; 
+    height: 28px; 
+    border-radius: 4px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border: none; 
+    cursor: pointer;
+}
+
+/* 修正手機版可能發生的寬度問題 */
+@media screen and (max-width: 600px) {
+    .word-side-panel {
+        width: 120px; /* 確保手機版也維持固定寬度，不縮窄 */
+    }
+}
+
 .container {
     max-width: 800px;
     width: 100%;
