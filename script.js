@@ -201,7 +201,8 @@ function startSpeechLoad(fieldId) {
         // 忽略不影響功能的錯誤訊息
         // 'aborted': 當辨識被手動停止或重複點擊時觸發，不需視為錯誤
         // 'no-speech': 使用者沒說話，不需彈窗
-        if (event.error === 'aborted' || event.error === 'no-speech') {
+        const err = (event.error || "").toLowerCase();
+        if (err === 'aborted' || err === 'no-speech') {
             if (event.error === 'no-speech') {
                 field.placeholder = 'No speech detected. (未偵測到聲音)';
             }
@@ -209,17 +210,24 @@ function startSpeechLoad(fieldId) {
         }
 
         console.error('Speech recognition error:', event.error);
-        if (event.error === 'not-allowed') {
-            alert('請在瀏覽器設定中允許麥克風權限。');
-        } else {
-            // 其他嚴重錯誤（如網路問題）則顯示在 placeholder，不要彈窗干擾
-            field.placeholder = 'Recognition error: ' + event.error;
+        
+        // 實體身份校驗：確保只處理當前活躍的辨識請求
+        if (activeRecognition === recognition) {
+            if (event.error === 'not-allowed') {
+                alert('請在瀏覽器設定中允許麥克風權限。');
+            } else {
+                field.placeholder = 'Recognition error: ' + event.error;
+            }
+            isRecognizing = false;
+            activeRecognition = null;
         }
     };
 
     recognition.onend = () => {
-        isRecognizing = false;
-        activeRecognition = null;
+        if (activeRecognition === recognition) {
+            isRecognizing = false;
+            activeRecognition = null;
+        }
         field.style.borderColor = '';
         field.style.boxShadow = '';
         if (field.tagName === 'INPUT') field.placeholder = originalPlaceholder;
@@ -509,23 +517,28 @@ function testPronunciation() {
     recognition.onerror = (event) => {
         console.error("Speech Recognition Error:", event.error);
         
-        // iOS 關鍵修正：忽略 abort 導致的錯誤，避免在上一次辨識中止時干擾新辨識的 UI
-        if (event.error === 'aborted') return;
+        // 關鍵修正：不分平台，一律忽略 abort 導致的錯誤
+        if ((event.error || "").toLowerCase() === 'aborted') return;
 
         const errorIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>`;
         const micOffIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>`;
         
-        feedbackEl.innerHTML = event.error === 'no-speech' ? `${micOffIcon} No sound detected. Try again.` : `${errorIcon} Error: ${event.error}`;
-        feedbackEl.style.color = "var(--text-muted)";
-        consecutiveCorrectCount = 0; // 出錯時也重置次數
-        isRecognizing = false;
-        activeRecognition = null;
+        // 實體身份校驗
+        if (activeRecognition === recognition) {
+            feedbackEl.innerHTML = event.error === 'no-speech' ? `${micOffIcon} No sound detected. Try again.` : `${errorIcon} Error: ${event.error}`;
+            feedbackEl.style.color = "var(--text-muted)";
+            consecutiveCorrectCount = 0; 
+            isRecognizing = false;
+            activeRecognition = null;
+        }
     };
 
     recognition.onend = () => {
-        isRecognizing = false;
-        activeRecognition = null; // 結束後務必清空引用，確保下次點擊能正常 start()
-        startPracticeTimer();
+        if (activeRecognition === recognition) {
+            isRecognizing = false;
+            activeRecognition = null; // 結束後務必清空引用
+            startPracticeTimer();
+        }
     };
 
     try {
