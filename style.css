@@ -47,22 +47,22 @@ body {
     flex-shrink: 0; /* 防止面板被壓縮 */
 }
 
+/* 修正手機版可能發生的寬度問題 */
+@media screen and (max-width: 600px) {
+    .word-side-panel {
+        width: 105px; /* 手機版稍微縮窄一點點，留空間給輸入框 */
+    }
+}
+
 .mini-accent-selector {
     display: flex;
     background: rgba(15, 23, 42, 0.5);
     border-radius: 4px;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    justify-content: flex-end; /* 讓 UK/US 按鈕靠右對齊 */
 }
 .mini-accent-selector label {
-    /* 移除 flex: 1，設定固定寬度 */
-    width: 58px; 
-    margin: 0 !important; 
-    padding: 4px; 
-    font-size: 10px; 
-    cursor: pointer; 
-    text-align: center;
+    flex: 1; margin: 0 !important; padding: 4px; font-size: 10px; cursor: pointer; text-align: center;
 }
 .mini-accent-selector input { display: none; }
 .mini-accent-selector label:has(input:checked) { background: var(--primary-color); color: white; }
@@ -70,37 +70,14 @@ body {
 .action-btn-row, .audio-btn-row {
     display: flex;
     gap: 4px;
-    justify-content: flex-end; /* 讓按鈕靠右對齊 */
 }
 
 .rect-mini-btn {
-    flex: 1; /* 自動延伸以填滿寬度，若有兩個則平分 */
-    height: 28px; 
-    font-size: 11px; 
-    border-radius: 4px; 
-    border: none; 
-    color: white; 
-    cursor: pointer; 
-    font-weight: bold;
+    flex: 1; height: 28px; font-size: 11px; border-radius: 4px; border: none; color: white; cursor: pointer; font-weight: bold;
 }
 
 .icon-mini-btn {
-    /* 移除 flex: 1，設定固定寬度 */
-    width: 58px; 
-    height: 28px; 
-    border-radius: 4px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    border: none; 
-    cursor: pointer;
-}
-
-/* 修正手機版可能發生的寬度問題 */
-@media screen and (max-width: 600px) {
-    .word-side-panel {
-        width: 120px; /* 確保手機版也維持固定寬度，不縮窄 */
-    }
+    flex: 1; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer;
 }
 
 .container {
