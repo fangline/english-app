@@ -680,6 +680,22 @@ function deleteWord(id) {
     saveToLocalStorage();
 }
 
+/**
+ * 顯示簡短的 Toast 提示訊息
+ */
+function showToast(message) {
+    let toast = document.getElementById('toast-notification');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast-notification';
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
 function exportVocab() {
     if (vocabulary.length === 0) return alert("目前沒有單字可以匯出。");
     
@@ -701,6 +717,7 @@ function exportVocab() {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Vocabulary");
     
     XLSX.writeFile(workbook, `my_vocabulary_backup_${new Date().toISOString().slice(0,10)}.xlsx`);
+    showToast("✅ 備份檔案已成功下載！");
 }
 
 function importVocab(event) {
