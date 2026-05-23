@@ -24,6 +24,57 @@
         #vocab-body td:first-child {
             cursor: pointer;
         }
+        /* 強化儲存按鈕的視覺與互動感 */
+        .save-btn {
+            background-color: #2563eb !important; /* 使用顯眼的藍色 */
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+            transition: all 0.2s ease;
+        }
+        .save-btn:active {
+            transform: scale(0.98);
+        }
+        /* 儲存成功後的成功狀態 */
+        .save-btn.success {
+            background-color: #10b981 !important; /* 轉為優雅的綠色 */
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+        .save-btn .check-icon {
+            display: none;
+            width: 18px;
+            height: 18px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        .save-btn.success .check-icon {
+            display: inline-flex;
+            animation: checkmark-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes checkmark-pop {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* 手機版優化：Learning Results 內容加大與置中 */
+        @media (max-width: 600px) {
+            #vocab-table {
+                width: 100% !important;
+                table-layout: fixed; /* 防止表格被長內容撐開 */
+                margin: 0 auto;
+            }
+            #vocab-table th, 
+            #vocab-table td {
+                text-align: center !important;
+                padding: 12px 4px;
+                word-wrap: break-word; /* 支援長單字斷行 */
+                word-break: break-word;
+            }
+            .vocab-word-cell {
+                font-size: 1.4rem !important; /* 字體大約加大 2-3 級 */
+                width: 40%; /* 分配較多空間給單字區塊 */
+            }
+        }
     </style>
 </head>
 <body>
@@ -141,13 +192,19 @@
             </div>
             <div class="form-group">
                 <label>Example Trans. (例句翻譯)</label>
-                <input type="text" id="example-translation" placeholder="例句中文翻譯">
+                <input type="text" id="example-translation" placeholder="例句中文翻譯" onkeydown="if(event.key==='Enter') saveWord()">
             </div>
             <div class="form-group">
                 <label>Trans. (翻譯)</label>
-                <input type="text" id="translation">
+                <input type="text" id="translation" placeholder="輸入翻譯後按 Enter 快速儲存" onkeydown="if(event.key==='Enter') saveWord()">
             </div>
-            <button onclick="saveWord()">Save Word</button>
+            <button onclick="saveWord()" class="save-btn" id="save-btn">
+                <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span id="save-btn-text">Save Word</span>
+            </button>
+            <p style="text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 10px;">💡 提示：在翻譯欄位按 <b>Enter</b> 即可儲存</p>
         </section>
 
         <!-- Practice Section -->

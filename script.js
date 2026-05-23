@@ -372,10 +372,20 @@ function saveWord() {
 
     if (existingIndex >= 0) {
         vocabulary[existingIndex] = wordData;
-        alert("Word updated (Overwritten)!");
     } else {
         vocabulary.push(wordData);
-        alert("Word saved!");
+    }
+
+    // 觸發儲存成功動畫回饋
+    const btn = document.getElementById('save-btn');
+    const btnText = document.getElementById('save-btn-text');
+    if (btn && btnText) {
+        btn.classList.add('success');
+        btnText.textContent = 'Saved!';
+        setTimeout(() => {
+            btn.classList.remove('success');
+            btnText.textContent = 'Save Word';
+        }, 2000);
     }
 
     saveToLocalStorage();
