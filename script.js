@@ -149,6 +149,35 @@ function debouncedAutoFill() {
         autoFill();
     }, 700); // 延遲 700 毫秒，避免打字時頻繁觸發 API 請求
 }
+
+let exampleTranslationTimeout;
+function debouncedTranslateExample() {
+    clearTimeout(exampleTranslationTimeout);
+    exampleTranslationTimeout = setTimeout(() => {
+        translateExample();
+    }, 800); // 針對句子翻譯給予稍微長一點的延遲
+}
+
+async function translateExample() {
+    const exampleText = document.getElementById('example').value.trim();
+    if (!exampleText) {
+        document.getElementById('example-translation').value = '';
+        return;
+    }
+    try {
+        const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(exampleText)}&langpair=en|zh-TW`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data.responseData && data.responseData.translatedText) {
+                // 移除可能的 HTML 標籤並填入翻譯
+                document.getElementById('example-translation').value = data.responseData.translatedText.replace(/<\/?[^>]+(>|$)/g, "");
+            }
+        }
+    } catch (err) {
+        console.warn("Manual example translation failed", err);
+    }
+}
+
 let isRecognizing = false;
 let activeRecognition = null; // 追蹤目前的辨識實體
 

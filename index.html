@@ -202,7 +202,7 @@
             <div class="form-group">
                 <label>Example Sentence (例句)</label>
                 <div class="input-with-btn">
-                    <textarea id="example" rows="2" placeholder="輸入例句或使用語音輸入..."></textarea>
+                    <textarea id="example" rows="2" placeholder="輸入例句或使用語音輸入..." oninput="debouncedTranslateExample()"></textarea>
                     <button type="button" class="speak-btn" style="background-color: #4CAF50;" onclick="startSpeechLoad('example')" title="語音輸入">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
                     </button>
