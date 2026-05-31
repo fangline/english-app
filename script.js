@@ -224,6 +224,9 @@ function startSpeechLoad(fieldId) {
         if (fieldId === 'word') {
             autoFill();
         }
+        if (fieldId === 'example') {
+            translateExample(); // 語音辨識完成後直接觸發例句翻譯
+        }
     };
 
     recognition.onerror = (event) => {
@@ -330,16 +333,7 @@ async function autoFill() {
                 }
                 if (foundExample) {
                     document.getElementById('example').value = foundExample;
-                    // 額外嘗試翻譯例句
-                    try {
-                        const exTransRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(foundExample)}&langpair=en|zh-TW`);
-                        if (exTransRes.ok) {
-                            const exTransData = await exTransRes.json();
-                            if (exTransData.responseData && exTransData.responseData.translatedText) {
-                                document.getElementById('example-translation').value = exTransData.responseData.translatedText.replace(/<\/?[^>]+(>|$)/g, "");
-                            }
-                        }
-                    } catch (e) { console.warn("Example translation failed", e); }
+                    translateExample(); // 呼叫統一的翻譯函式，確保同步更新
                 }
 
                 // 自動判斷並選擇詞態
@@ -355,7 +349,8 @@ async function autoFill() {
         }
 
         // 2. 從 MyMemory API 獲取繁體中文翻譯
-        const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|zh-TW`);
+        // 修正：加入 encodeURIComponent 以支援帶空格的詞彙
+        const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
         if (transRes.ok) {
             const transData = await transRes.json();
             if (transData.responseData && transData.responseData.translatedText) {
